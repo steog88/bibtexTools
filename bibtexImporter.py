@@ -19,7 +19,12 @@ or fetches the missing ones in INSPIRES. The downloaded information is saved bot
 """
 
 import sys,re,os
-import urllib2
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen
 
 #configuration: folder and main file where to save the downloaded entries
 bibfolder = '/home/gariazzo/Latex/bib/'
@@ -224,7 +229,10 @@ unicode_to_latex = {
     u"\u2019": "'",
     u"\xa0": " ",
 }
-translation_table = dict([(ord(k), unicode(v)) for k, v in unicode_to_latex.items()])
+try:
+	translation_table = dict([(ord(k), unicode(v)) for k, v in unicode_to_latex.items()])
+except NameError:
+	translation_table = dict([(ord(k), str(v)) for k, v in unicode_to_latex.items()])
 
 def parse_accents_str(string):
 	"""needed to remove bad unicode characters that cannot printed well"""
@@ -232,20 +240,21 @@ def parse_accents_str(string):
 		string = string.translate(translation_table)
 	return string
 
-def writeToFile(text, stream, k):
+def writeToFile(text, filename, k):
 	"""write to file with try/except to avoid problems with unicode"""
 	try:
-		stream.write(text)
+		with open(filename,"a") as stream:
+			stream.write(text)
 		return True
 	except UnicodeEncodeError:
-		print "the current entry '%s' cannot be saved since it contains a bad unicode character!"%m
+		print("the current entry '%s' cannot be saved since it contains a bad unicode character!"%m)
 		return False
 
 def retrieveurl(bibkey):
 	"""search Inspires for the missing entries"""
 	url="http://inspirehep.net/search?p=" + bibkey + "&sf=&so=d&rm=&rg=1000&sc=0&of=hx&em=B";
-	print "looking for '%s' in %s"%(bibkey, url)
-	response = urllib2.urlopen(url)
+	print("looking for '%s' in %s"%(bibkey, url))
+	response = urlopen(url)
 	data = response.read()      # a `bytes` object
 	text = data.decode('utf-8')
 	i1=text.find("<pre>")
@@ -275,11 +284,11 @@ for e in l:
 outfile=sys.argv[2]
 
 #print some information
-print "reading keys from "+keysfold+" folder:"
-print "    "+"    ".join(texs)
-print "bib entries from "+bibfolder+" directory:"
-print "    "+"    ".join(bibs)
-print "saving in "+keysfold+outfile+"\n"
+print("reading keys from "+keysfold+" folder:")
+print("    "+"    ".join(texs))
+print("bib entries from "+bibfolder+" directory:")
+print("    "+"    ".join(bibs))
+print("saving in "+keysfold+outfile+"\n")
 
 if not os.path.isfile(keysfold+outfile):
 	with open(keysfold+outfile,'a'):
@@ -321,7 +330,7 @@ for c in citaz:
 	for e in a:
 		if e not in strs:
 			strs.append(e)
-print "keys found: %d"%len(strs)
+print("keys found: %d"%len(strs))
 
 missing=[]
 warnings=0
@@ -329,7 +338,7 @@ warnings=0
 for s in strs:
 	if s not in outcont:
 		missing.append(s)
-print "missing: %d"%len(missing)
+print("missing: %d"%len(missing))
 
 notfound=""
 keychange=""
@@ -348,40 +357,37 @@ for m in missing:
 		for u in unw3.finditer(bib):
 			bib=bib.replace(u.group(),'')
 		bibf = '\n'.join([line for line in bib.split('\n') if line.strip() ])
-		with open(keysfold+outfile,"a") as o:
-			if writeToFile(bibf+"\n", o, m):
-				print "- %s inserted!"%m
+		if writeToFile(bibf+"\n", keysfold+outfile, m):
+			print("- %s inserted!"%m)
 	#entry missing in local database: search inspires
 	else:
 		new=parse_accents_str(retrieveurl(m))#open search url
 		if len(new):
 			#sometimes inspires changes the bibtex keys after some time.
 			#save the entry in the output .bib file and give a warning if it happened for the current entry
-			with open(keysfold+outfile,"a") as o:
-				if not new.find(m)>0:
-					warnings+=1
-					t=[j.group() for j in bibel.finditer(new)]
-					t1=[]
-					for s in t:
-						for u in bibty.finditer(s):
-							s=s.replace(u.group(),'')
-						s=s.replace(',','')
-						t1.append(s)
-					keychange+= "-->     WARNING! %s has a new key: %s\n"%(m,t1[0])
-					#first, save the bibtex as it is in the main database or temporary file:
-					for s in t1:
-						if m not in allbib and str(s) not in allbib:
-							with open(bibfolder+saveInFile,"a") as o:
-								if writeToFile(new+"\n",o,m):
-									print "'%s' (new key '%s') retrieved by InspireHEP and inserted into %s file - %d bytes"%(m,s,saveInFile,len(new))
-						if str(s) not in outcont:
-							if writeToFile(new+"\n",o,m):
-								print "... and it was inserted in the .bib file"
+			if not new.find(m)>0:
+				warnings+=1
+				t=[j.group() for j in bibel.finditer(new)]
+				t1=[]
+				for s in t:
+					for u in bibty.finditer(s):
+						s=s.replace(u.group(),'')
+					s=s.replace(',','')
+					t1.append(s)
+				keychange+= "-->     WARNING! %s has a new key: %s\n"%(m,t1[0])
+				#first, save the bibtex as it is in the main database or temporary file:
+				for s in t1:
+					if m not in allbib and str(s) not in allbib:
+						if writeToFile(new+"\n",bibfolder+saveInFile,m):
+							print("'%s' (new key '%s') retrieved by InspireHEP and inserted into %s file - %d bytes"%(m,s,saveInFile,len(new)))
+					if str(s) not in outcont:
+						if writeToFile(new+"\n",keysfold+outfile,m):
+							print("... and it was inserted in the .bib file")
 		else:
 			notfound+="-- warning: missing entry for %s\n"%m
 			warnings+=1
 #print resume of what has been done: keys that don't exist in INSPIRES, entries whose key has been changed, total number of warnings
-print "finished!\n"
-print notfound
-print keychange
-print "-->     %d warning(s) occurred!"%warnings
+print("finished!\n")
+print(notfound)
+print(keychange)
+print("-->     %d warning(s) occurred!"%warnings)
