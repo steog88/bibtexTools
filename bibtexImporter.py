@@ -227,6 +227,7 @@ unicode_to_latex = {
     u"\u2015": "---",
     u"\u2018": "'",
     u"\u2019": "'",
+    u"\u2032": "'",
     u"\xa0": " ",
 }
 try:
@@ -234,20 +235,28 @@ try:
 except NameError:
 	translation_table = dict([(ord(k), str(v)) for k, v in unicode_to_latex.items()])
 
+firstPrintInMaster = True
+
 def parse_accents_str(string):
 	"""needed to remove bad unicode characters that cannot printed well"""
 	if string is not None and string is not "":
 		string = string.translate(translation_table)
 	return string
 
-def writeToFile(text, filename, k):
+def writeToFile(text, filename, k, addComment = False):
 	"""write to file with try/except to avoid problems with unicode"""
+	global firstPrintInMaster
 	try:
+		if addComment and firstPrintInMaster:
+			firstPrintInMaster = False
+			with open(filename,"a") as stream:
+				stream.write("%%lines added by bibtexImporter.py")
 		with open(filename,"a") as stream:
 			stream.write(text)
 		return True
-	except UnicodeEncodeError:
+	except UnicodeEncodeError, e:
 		print("the current entry '%s' cannot be saved since it contains a bad unicode character!"%m)
+		print(e)
 		return False
 
 def retrieveurl(bibkey):
@@ -307,6 +316,7 @@ allbib=""
 for b in bibs:
 	with open(bibfolder+b) as r:
 		allbib += r.read()
+allbib+="@" #due to the way entries are parsed with regex...
 
 #regular expression utilities
 cite=re.compile('\\\\cite\{([A-Za-z]*:[0-9]*[a-z]*[,]?[\n ]*|[A-Za-z0-9\-][,]?[\n ]*)*\}',re.MULTILINE)	#find \cite{...}
@@ -334,7 +344,7 @@ print("keys found: %d"%len(strs))
 
 missing=[]
 warnings=0
-#read the list of bibtex needed keys and check which ones are already in the main bibliography files
+#read the list of needed bibtex keys and check which ones are already in the main bibliography files
 for s in strs:
 	if s not in outcont:
 		missing.append(s)
@@ -342,6 +352,7 @@ print("missing: %d"%len(missing))
 
 notfound=""
 keychange=""
+writeFailed=""
 #enters the main loop. If entries exist locally, they are just copied, else INSPIRES will be searched for them
 for m in missing:
 	art=re.compile('@[a-zA-Z]*\{'+m+',.*?@',re.MULTILINE|re.DOTALL)	#find the @Article(or other) entry for the key "m"
@@ -362,14 +373,20 @@ for m in missing:
 	#entry missing in local database: search inspires
 	else:
 		new=parse_accents_str(retrieveurl(m))#open search url
+		currentSaveMaster=True
+		currentSaveLocal=True
 		if len(new):
 			#sometimes inspires changes the bibtex keys after some time.
 			#save the entry in the output .bib file and give a warning if it happened for the current entry
 			if new.find(m)>0:
-				if writeToFile(new+"\n",bibfolder+saveInFile,m):
+				if writeToFile(new+"\n",bibfolder+saveInFile,m, True):
 					print("'%s' retrieved by InspireHEP and inserted into %s file - %d bytes"%(m,saveInFile,len(new)))
+				else:
+					currentSaveMaster=False
 				if writeToFile(new+"\n",keysfold+outfile,m):
-					print("...and in the %s file!"%outfile)
+					print("...inserted in the %s file!"%outfile)
+				else:
+					currentSaveLocal=False
 			else:
 				warnings+=1
 				t=[j.group() for j in bibel.finditer(new)]
@@ -383,11 +400,19 @@ for m in missing:
 				#first, save the bibtex as it is in the main database or temporary file:
 				for s in t1:
 					if m not in allbib and str(s) not in allbib:
-						if writeToFile(new+"\n",bibfolder+saveInFile,m):
+						if writeToFile(new+"\n",bibfolder+saveInFile,m, True):
 							print("'%s' (new key '%s') retrieved by InspireHEP and inserted in the %s file - %d bytes"%(m,s,saveInFile,len(new)))
+						else:
+							currentSaveMaster=False
 					if str(s) not in outcont:
 						if writeToFile(new+"\n",keysfold+outfile,m):
-							print("... and in the %s file!"%outfile)
+							print("...inserted in the %s file!"%outfile)
+						else:
+							currentSaveLocal=False
+			if not (currentSaveLocal and currentSaveMaster):
+				warnings+=1
+				print("----something wrong in adding '%s'!"%m)
+				writeFailed+="-->     WARNING! %s cannot be saved! (bad unicode characters?)\n"%m
 		else:
 			notfound+="-- warning: missing entry for %s\n"%m
 			warnings+=1
@@ -395,4 +420,5 @@ for m in missing:
 print("finished!\n")
 print(notfound)
 print(keychange)
+print(writeFailed)
 print("-->     %d warning(s) occurred!"%warnings)

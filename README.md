@@ -6,7 +6,7 @@ This tool is intended to facilitate managing bibliography for LaTeX.
 You should use INSPIRES keys for the bibtex entries in order to have a good behaviour of the code.
 
 ### Requirements and Configuration
-Tested only in Linux and with Python 2.
+Tested only in Linux (Ubuntu 14.04) and Windows (8.1), with Python 2 and 3.
 
 You may need to install Python package `urllib2` if it is missing.
 
