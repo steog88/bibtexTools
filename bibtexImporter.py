@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 """
-Read the .tex files in a folder and creates a .bib file for the compilation of the .tex document
+author: Stefano Gariazzo <gariazzo@ific.uv.es>
+
+Read the .tex files in a folder and creates a .bib file for the compilation of the .tex document.
+You should use INSPIRES keys for the bibtex entries in order to have a good behaviour of the code.
+
 Usage:
 python bibtexImporter.py "folder/where/tex/files/are/" "name_of_output.bib"
 assuming that you want to compile some tex file(s):
@@ -12,9 +16,6 @@ and that your .bib file should be called:
 The code reads the texs to detect which entries must be saved in the output .bib file,
 checks the .bib files in the main local database (path configured in the script) to copy the entries that are already stored there
 or fetches the missing ones in INSPIRES. The downloaded information is saved both in the local database and in the output file.
-You should use INSPIRES keys for the bibtex entries in order to have a good behaviour of the code.
-
-author: Stefano Gariazzo <gariazzo@ific.uv.es>
 """
 
 import sys,re,os
