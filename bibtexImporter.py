@@ -365,7 +365,12 @@ for m in missing:
 		if len(new):
 			#sometimes inspires changes the bibtex keys after some time.
 			#save the entry in the output .bib file and give a warning if it happened for the current entry
-			if not new.find(m)>0:
+			if new.find(m)>0:
+				if writeToFile(new+"\n",bibfolder+saveInFile,m):
+					print("'%s' retrieved by InspireHEP and inserted into %s file - %d bytes"%(m,saveInFile,len(new)))
+				if writeToFile(new+"\n",keysfold+outfile,m):
+					print("...and in the %s file!"%outfile)
+			else:
 				warnings+=1
 				t=[j.group() for j in bibel.finditer(new)]
 				t1=[]
@@ -379,10 +384,10 @@ for m in missing:
 				for s in t1:
 					if m not in allbib and str(s) not in allbib:
 						if writeToFile(new+"\n",bibfolder+saveInFile,m):
-							print("'%s' (new key '%s') retrieved by InspireHEP and inserted into %s file - %d bytes"%(m,s,saveInFile,len(new)))
+							print("'%s' (new key '%s') retrieved by InspireHEP and inserted in the %s file - %d bytes"%(m,s,saveInFile,len(new)))
 					if str(s) not in outcont:
 						if writeToFile(new+"\n",keysfold+outfile,m):
-							print("... and it was inserted in the .bib file")
+							print("... and in the %s file!"%outfile)
 		else:
 			notfound+="-- warning: missing entry for %s\n"%m
 			warnings+=1
