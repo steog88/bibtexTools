@@ -21,9 +21,12 @@ and that your .bib file should be called
 
     `python bibtexImporter.py "folder/where/tex/files/are/" "name_of_output.bib"`
 
-The code reads the .tex files to detect which entries must be saved in the output .bib file,
+Example: `python bibtexImporter.py "/home/username/Documents/projectA/" "bibliography.bib"`
+
+The code reads the .tex files in the given folder to detect which entries must be saved in the given output .bib file,
 checks the .bib files in the main local database (_the path **must be** configured in the script_) to copy the entries that are already stored there or fetches the missing ones in INSPIRES.
 The downloaded information is saved both in the local database and in the output file.
+If the output file already exists, the new content is appended to it.
 
 ### Suggestions
 * you may use different .bib files in your local database, dividing the entries by subject, for example;
