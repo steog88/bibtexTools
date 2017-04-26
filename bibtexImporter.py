@@ -320,7 +320,7 @@ allbib+="@" #due to the way entries are parsed with regex...
 
 #regular expression utilities
 cite=re.compile('\\\\cite\{([A-Za-z]*:[0-9]*[a-z]*[,]?[\n ]*|[A-Za-z0-9\-][,]?[\n ]*)*\}',re.MULTILINE)	#find \cite{...}
-bibel=re.compile('@[a-zA-Z]*\{([A-Za-z]*:[0-9]*[a-z]*)?,',re.MULTILINE|re.DOTALL)	#find the @Article(or other)...}, entry for the key "m"
+bibel=re.compile('@[a-zA-Z]*\{(\s)*([A-Za-z]*:[0-9]*[a-z]*)?(\s)*,',re.MULTILINE|re.DOTALL)	#find the @Article(or other)...}, entry for the key "m"
 bibty=re.compile('@[a-zA-Z]*\{',re.MULTILINE|re.DOTALL)	#find the @Article(or other) entry for the key "m"
 #You can add here more fields that you have in your local bib file but that are not necessary for compilation:
 unw1=re.compile('[ ]*(Owner|Timestamp|__markedentry|File)+[ ]*=.*?,[\n]*')	#remove unwanted fields
@@ -355,7 +355,7 @@ keychange=""
 writeFailed=""
 #enters the main loop. If entries exist locally, they are just copied, else INSPIRES will be searched for them
 for m in missing:
-	art=re.compile('@[a-zA-Z]*\{'+m+',.*?@',re.MULTILINE|re.DOTALL)	#find the @Article(or other) entry for the key "m"
+	art=re.compile('@[a-zA-Z]*\{(\s)*'+m+'(\s)*,.*?@',re.MULTILINE|re.DOTALL)	#find the @Article(or other) entry for the key "m"
 	t=[j for j in art.finditer(allbib)]
 	#local bibtexs match: remove unwanted stuff and copy to output file
 	if len(t)>0:
