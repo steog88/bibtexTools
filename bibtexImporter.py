@@ -26,10 +26,7 @@ except ImportError:
     # Fall back to Python 2's urllib2
     from urllib2 import urlopen
 
-#configuration: folder and main file where to save the downloaded entries
-bibfolder = '/home/gariazzo/Latex/bib/'
-saveInFile = "tmp.bib"
-
+from bibtexToolsConfig import bibfolder, saveInFile
 
 ################################################################
 # unicode characters replacements.
@@ -297,24 +294,24 @@ print("reading keys from "+keysfold+" folder:")
 print("    "+"    ".join(texs))
 print("bib entries from "+bibfolder+" directory:")
 print("    "+"    ".join(bibs))
-print("saving in "+keysfold+outfile+"\n")
+print("saving in "+os.path.join(keysfold, outfile)+"\n")
 
-if not os.path.isfile(keysfold+outfile):
-	with open(keysfold+outfile,'a'):
-		os.utime(keysfold+outfile,None)
+if not os.path.isfile(os.path.join(keysfold, outfile)):
+	with open(os.path.join(keysfold, outfile),'a'):
+		os.utime(os.path.join(keysfold, outfile),None)
 
 #save content of tex files in a string:
 keyscont=""
 for t in texs:
-	with open(keysfold+t) as r:
+	with open(os.path.join(keysfold, t)) as r:
 		keyscont += r.read()
 #if existing, read output file (to detect which bibtex entries are already there:)
-with open(keysfold+outfile) as r:
+with open(os.path.join(keysfold, outfile)) as r:
 	outcont = r.read()
 #read the local bibtex database in the specified folder
 allbib=""
 for b in bibs:
-	with open(bibfolder+b) as r:
+	with open(os.path.join(bibfolder, b)) as r:
 		allbib += r.read()
 allbib+="@" #due to the way entries are parsed with regex...
 
@@ -368,7 +365,7 @@ for m in missing:
 		for u in unw3.finditer(bib):
 			bib=bib.replace(u.group(),'')
 		bibf = '\n'.join([line for line in bib.split('\n') if line.strip() ])
-		if writeToFile(bibf+"\n", keysfold+outfile, m):
+		if writeToFile(bibf+"\n", os.path.join(keysfold, outfile), m):
 			print("- %s inserted!"%m)
 	#entry missing in local database: search inspires
 	else:
@@ -379,11 +376,11 @@ for m in missing:
 			#sometimes inspires changes the bibtex keys after some time.
 			#save the entry in the output .bib file and give a warning if it happened for the current entry
 			if new.find(m)>0:
-				if writeToFile(new+"\n",bibfolder+saveInFile,m, True):
+				if writeToFile(new+"\n",os.path.join(bibfolder, saveInFile),m, True):
 					print("'%s' retrieved by InspireHEP and inserted into %s file - %d bytes"%(m,saveInFile,len(new)))
 				else:
 					currentSaveMaster=False
-				if writeToFile(new+"\n",keysfold+outfile,m):
+				if writeToFile(new+"\n",os.path.join(keysfold, outfile),m):
 					print("...inserted in the %s file!"%outfile)
 				else:
 					currentSaveLocal=False
@@ -400,12 +397,12 @@ for m in missing:
 				#first, save the bibtex as it is in the main database or temporary file:
 				for s in t1:
 					if m not in allbib and str(s) not in allbib:
-						if writeToFile(new+"\n",bibfolder+saveInFile,m, True):
+						if writeToFile(new+"\n",os.path.join(bibfolder, saveInFile),m, True):
 							print("'%s' (new key '%s') retrieved by InspireHEP and inserted in the %s file - %d bytes"%(m,s,saveInFile,len(new)))
 						else:
 							currentSaveMaster=False
 					if str(s) not in outcont:
-						if writeToFile(new+"\n",keysfold+outfile,m):
+						if writeToFile(new+"\n",os.path.join(keysfold, outfile),m):
 							print("...inserted in the %s file!"%outfile)
 						else:
 							currentSaveLocal=False
