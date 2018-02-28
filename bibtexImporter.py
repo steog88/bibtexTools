@@ -316,7 +316,7 @@ for b in bibs:
 allbib+="@" #due to the way entries are parsed with regex...
 
 #regular expression utilities
-cite=re.compile('\\\\cite\{([A-Za-z]*:[0-9]*[a-z]*[,]?[\n ]*|[A-Za-z0-9\-][,]?[\n ]*)*\}',re.MULTILINE)	#find \cite{...}
+cite=re.compile('\\\\(cite|citep|citet)\{([A-Za-z]*:[0-9]*[a-z]*[,]?[\n ]*|[A-Za-z0-9\-][,]?[\n ]*)*\}',re.MULTILINE)	#find \cite{...}
 bibel=re.compile('@[a-zA-Z]*\{(\s)*([A-Za-z]*:[0-9]*[a-z]*)?(\s)*,',re.MULTILINE|re.DOTALL)	#find the @Article(or other)...}, entry for the key "m"
 bibty=re.compile('@[a-zA-Z]*\{',re.MULTILINE|re.DOTALL)	#find the @Article(or other) entry for the key "m"
 #You can add here more fields that you have in your local bib file but that are not necessary for compilation:
@@ -329,7 +329,7 @@ citaz=[m for m in cite.finditer(keyscont)]
 strs=[]
 #for each "\cite{...}", extract the cited bibtex keys
 for c in citaz:
-	b=c.group().replace(r'\cite{','')
+	b=c.group().replace(r'\cite{','').replace(r'\citep{', '').replace(r'\citet{', '')
 	d=b.replace(' ','')
 	b=d.replace('\n','')
 	d=b.replace(r'}','')
